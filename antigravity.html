@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Antigravity</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #canvas {
+            display: block;
+            background: white;
+        }
+        
+        #logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            z-index: 10;
+        }
+        
+        .g { color: #4285f4; }
+        .o1 { color: #ea4335; }
+        .o2 { color: #fbbc05; }
+        .g2 { color: #4285f4; }
+        .l { color: #34a853; }
+        .e { color: #ea4335; }
+        
+        #searchBox {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, calc(-50% + 100px));
+            width: 500px;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            outline: none;
+            z-index: 10;
+        }
+        
+        #searchBox:hover {
+            box-shadow: 0 1px 6px rgba(32,33,36,.28);
+        }
+        
+        #searchBox:focus {
+            box-shadow: 0 1px 6px rgba(32,33,36,.28);
+            border-color: rgba(223,225,229,0);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #5f6368;
+            font-size: 14px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="logo">
+        <span class="g">G</span><span class="o1">o</span><span class="o2">o</span><span class="g2">g</span><span class="l">l</span><span class="e">e</span>
+    </div>
+    
+    <input type="text" id="searchBox" placeholder="Search Google or type a URL">
+    
+    <div id="instructions">Click the logo to activate antigravity! Use your mouse to interact with floating elements.</div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const logo = document.getElementById('logo');
+        const searchBox = document.getElementById('searchBox');
+        const instructions = document.getElementById('instructions');
+        
+        let engine, render, runner;
+        let isAntigravityActive = false;
+        let bodies = [];
+        
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (render) {
+                render.canvas.width = window.innerWidth;
+                render.canvas.height = window.innerHeight;
+            }
+        });
+        
+        logo.addEventListener('click', activateAntigravity);
+        
+        function activateAntigravity() {
+            if (isAntigravityActive) return;
+            isAntigravityActive = true;
+            
+            // Hide UI elements
+            logo.classList.add('hidden');
+            searchBox.classList.add('hidden');
+            instructions.classList.add('hidden');
+            
+            // Initialize Matter.js
+            const Engine = Matter.Engine;
+            const Render = Matter.Render;
+            const Runner = Matter.Runner;
+            const Bodies = Matter.Bodies;
+            const World = Matter.World;
+            const Mouse = Matter.Mouse;
+            const MouseConstraint = Matter.MouseConstraint;
+            
+            engine = Engine.create({
+                gravity: { x: 0, y: -0.5 }
+            });
+            
+            render = Render.create({
+                canvas: canvas,
+                engine: engine,
+                options: {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    wireframes: false,
+                    background: '#ffffff'
+                }
+            });
+            
+            // Create boundaries (invisible walls)
+            const wallThickness = 50;
+            const walls = [
+                Bodies.rectangle(window.innerWidth / 2, -wallThickness / 2, window.innerWidth, wallThickness, { 
+                    isStatic: true, 
+                    render: { fillStyle: 'transparent' }
+                }),
+                Bodies.rectangle(window.innerWidth / 2, window.innerHeight + wallThickness / 2, window.innerWidth, wallThickness, { 
+                    isStatic: true,
+                    render: { fillStyle: 'transparent' }
+                }),
+                Bodies.rectangle(-wallThickness / 2, window.innerHeight / 2, wallThickness, window.innerHeight, { 
+                    isStatic: true,
+                    render: { fillStyle: 'transparent' }
+                }),
+                Bodies.rectangle(window.innerWidth + wallThickness / 2, window.innerHeight / 2, wallThickness, window.innerHeight, { 
+                    isStatic: true,
+                    render: { fillStyle: 'transparent' }
+                })
+            ];
+            
+            // Create Google logo letters as physics objects
+            const colors = ['#4285f4', '#ea4335', '#fbbc05', '#4285f4', '#34a853', '#ea4335'];
+            const letters = ['G', 'o', 'o', 'g', 'l', 'e'];
+            const startX = window.innerWidth / 2 - 150;
+            const startY = window.innerHeight / 2;
+            
+            letters.forEach((letter, i) => {
+                const x = startX + i * 60;
+                const body = Bodies.circle(x, startY, 30, {
+                    restitution: 0.8,
+                    friction: 0.1,
+                    render: {
+                        fillStyle: colors[i],
+                        strokeStyle: colors[i],
+                        lineWidth: 2
+                    }
+                });
+                
+                body.letter = letter;
+                body.color = colors[i];
+                bodies.push(body);
+            });
+            
+            // Add some random objects
+            for (let i = 0; i < 20; i++) {
+                const x = Math.random() * window.innerWidth;
+                const y = Math.random() * window.innerHeight;
+                const size = 20 + Math.random() * 30;
+                const shape = Math.random() > 0.5 ? 'circle' : 'rectangle';
+                
+                let body;
+                if (shape === 'circle') {
+                    body = Bodies.circle(x, y, size / 2, {
+                        restitution: 0.8,
+                        friction: 0.1,
+                        render: {
+                            fillStyle: `hsl(${Math.random() * 360}, 70%, 60%)`
+                        }
+                    });
+                } else {
+                    body = Bodies.rectangle(x, y, size, size, {
+                        restitution: 0.8,
+                        friction: 0.1,
+                        render: {
+                            fillStyle: `hsl(${Math.random() * 360}, 70%, 60%)`
+                        }
+                    });
+                }
+                bodies.push(body);
+            }
+            
+            World.add(engine.world, [...walls, ...bodies]);
+            
+            // Add mouse control
+            const mouse = Mouse.create(render.canvas);
+            const mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse,
+                constraint: {
+                    stiffness: 0.2,
+                    render: { visible: false }
+                }
+            });
+            
+            World.add(engine.world, mouseConstraint);
+            render.mouse = mouse;
+            
+            // Custom rendering for letters
+            Matter.Events.on(render, 'afterRender', function() {
+                const context = render.context;
+                
+                bodies.forEach(body => {
+                    if (body.letter) {
+                        const pos = body.position;
+                        context.save();
+                        context.translate(pos.x, pos.y);
+                        context.rotate(body.angle);
+                        context.font = 'bold 40px Arial';
+                        context.fillStyle = body.color;
+                        context.textAlign = 'center';
+                        context.textBaseline = 'middle';
+                        context.fillText(body.letter, 0, 0);
+                        context.restore();
+                    }
+                });
+            });
+            
+            Render.run(render);
+            runner = Runner.create();
+            Runner.run(runner, engine);
+        }
+        
+        // Allow search box to work normally
+        searchBox.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && searchBox.value.trim()) {
+                const query = encodeURIComponent(searchBox.value.trim());
+                window.location.href = `https://www.google.com/search?q=${query}`;
+            }
+        });
+    </script>
+</body>
+</html>
